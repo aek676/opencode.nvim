@@ -4,14 +4,14 @@
 
 ## ✨ Features
 
-- Connect to _any_ `opencode`, or provide an integrated instance
-- Share editor context (buffer, selection, diagnostics, etc.)
+- Connect to _any_ `opencode` server
+- Inject editor context
 - Input prompts with completions, highlights, and normal-mode support
-- Select prompts from a library and define your own
+- Select and define re-usable prompts
 - Execute commands
 - Monitor and respond to events
 - View, accept or reject, and reload edits
-- Interact with `opencode` via an in-process LSP
+- Interact intuitively via an in-process LSP
 - _Vim-y_ — supports ranges and dot-repeat
 - Simple, sensible defaults to get you started quickly
 
@@ -126,12 +126,13 @@ Select prompts to review, explain, and improve your code:
 
 ### Server
 
-You can manually run `opencode`s however you like and `opencode.nvim` will find them!
+Run local `opencode`s however you like and `opencode.nvim` will find them!
+Or point `vim.g.opencode_opts.server.url` to a specific server, including remotes.
 
 > [!IMPORTANT]
 > You _must_ run `opencode` with the `--port` flag to expose its server.
 
-If `opencode.nvim` can't find an existing `opencode`, it uses the configured server to start one for you, defaulting to an embedded terminal.
+If `opencode.nvim` can't find an existing `opencode`, it starts one for you via `vim.g.opencode_opts.server.start`, defaulting to an embedded terminal.
 
 #### Keymaps
 

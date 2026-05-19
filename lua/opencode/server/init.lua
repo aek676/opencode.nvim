@@ -1,7 +1,8 @@
 ---@class opencode.server.Opts
 ---
 ---Full URL of an `opencode` server, e.g. `"http://localhost:4096"`.
----When set, bypasses local process discovery and connects directly.
+---If set, bypasses local process discovery and connects directly.
+---If pointing to a headless server, you _must_ attach a TUI via `opencode attach <URL>`.
 ---@field url? string|fun(callback: fun(url?: string))
 ---
 ---Basic auth username.
@@ -42,7 +43,10 @@ function Server.new(url)
   local Promise = require("opencode.promise")
 
   return Promise.new(function(resolve, reject)
-    -- Serially check health first to confirm that this is a valid and authenticated `opencode` server
+    -- Serially check health first to confirm that this is a valid and authenticated `opencode` server.
+    -- Would like to differentiate headless servers, but not possible afaict unfortunately.
+    -- No endpoint exposes such information, and TUI commands sent to a headless server with none attached just no-op, with no tell in the respone.
+    -- So user must manually `opencode attach` in that case.
     self:get_health(function()
       resolve(true)
     end, function(_, _, status) ---@param status number
