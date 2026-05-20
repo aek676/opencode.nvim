@@ -4,16 +4,16 @@
 
 ## ✨ Features
 
-- Connect to _any_ `opencode` server
-- Inject editor context
-- Input prompts with completions, highlights, and normal-mode support
+- Connect to _any_ `opencode` server or an integrated instance
+- Inject editor context (cursor, selection, buffer, ...)
+- Input prompts with completions, highlights, and normal mode
 - Select and define re-usable prompts
 - Execute commands
 - Monitor and respond to events
-- View, accept or reject, and reload edits
-- Interact intuitively via an in-process LSP
-- _Vim-y_ — supports ranges and dot-repeat
-- Simple, sensible defaults to get you started quickly
+- Accept/reject and reload edits
+- Interact intuitively via in-process LSP
+- _Vim-y_ — operator and dot-repeat
+- Simple and sensible defaults to get you started quickly
 
 ## 📦 Setup
 
@@ -126,29 +126,16 @@ Select prompts to review, explain, and improve your code:
 
 ### Server
 
-Run local `opencode`s however you like and `opencode.nvim` will find them!
-Or point `vim.g.opencode_opts.server.url` to a specific server, including remotes.
+Run local `opencode`s however you like and `opencode.nvim` will find them! Or point `vim.g.opencode_opts.server.url` to a specific server, including remotes.
 
 > [!IMPORTANT]
 > You _must_ run `opencode` with the `--port` flag to expose its server.
 
 If `opencode.nvim` can't find an existing `opencode`, it starts one for you via `vim.g.opencode_opts.server.start`, defaulting to an embedded terminal.
 
-#### Keymaps
+#### Custom
 
-`opencode.nvim` sets these normal-mode keymaps in the embedded terminal for Neovim-like message navigation:
-
-| Keymap  | Command                  | Description           |
-| ------- | ------------------------ | --------------------- |
-| `<C-u>` | `session.half.page.up`   | Scroll up half page   |
-| `<C-d>` | `session.half.page.down` | Scroll down half page |
-| `gg`    | `session.first`          | Go to first message   |
-| `G`     | `session.last`           | Go to last message    |
-| `<Esc>` | `session.interrupt`      | Interrupt             |
-
-#### Customization
-
-Example using [`snacks.terminal`](https://github.com/folke/snacks.nvim/blob/main/docs/terminal.md) instead:
+[`snacks.terminal`](https://github.com/folke/snacks.nvim/blob/main/docs/terminal.md) example:
 
 ```lua
 local opencode_cmd = 'opencode --port'
@@ -178,6 +165,18 @@ vim.g.opencode_opts = {
   },
 }
 ```
+
+#### Keymaps
+
+`opencode.nvim` sets these normal-mode keymaps in the embedded terminal for Neovim-like message navigation:
+
+| Keymap  | Command                  | Description           |
+| ------- | ------------------------ | --------------------- |
+| `<C-u>` | `session.half.page.up`   | Scroll up half page   |
+| `<C-d>` | `session.half.page.down` | Scroll down half page |
+| `gg`    | `session.first`          | Go to first message   |
+| `G`     | `session.last`           | Go to last message    |
+| `<Esc>` | `session.interrupt`      | Interrupt             |
 
 ## 🚀 Usage
 

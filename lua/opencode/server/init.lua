@@ -2,6 +2,7 @@
 ---
 ---Full URL of an `opencode` server, e.g. `"http://localhost:4096"`.
 ---If set, bypasses local process discovery and connects directly.
+---You _must_ run `opencode` with the `--port` flag to expose its server.
 ---If pointing to a headless server, you _must_ attach a TUI via `opencode attach <URL>`.
 ---@field url? string|fun(callback: fun(url?: string))
 ---
