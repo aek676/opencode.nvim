@@ -18,16 +18,13 @@ function M.prompt(prompt, opts)
     :next(function(server) ---@param server opencode.server.Server
       local rendered = context:render(prompt, server.subagents)
       local plaintext = context.plaintext(rendered.output)
-      return Promise.new(function(resolve)
-        server:tui_append_prompt(plaintext, function()
-          resolve(server)
-        end)
+      return server:tui_append_prompt(plaintext):next(function()
+        if not prompt:match(" $") then
+          return server:tui_execute_command("prompt.submit")
+        else
+          return true
+        end
       end)
-    end)
-    :next(function(server) ---@param server opencode.server.Server
-      if not prompt:match(" $") then
-        server:tui_execute_command("prompt.submit")
-      end
     end)
     :next(function()
       context:clear()

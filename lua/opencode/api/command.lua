@@ -25,7 +25,7 @@ local M = {}
 ---@return Promise
 function M.command(command)
   return require("opencode.server.discovery").get():next(function(server) ---@param server opencode.server.Server
-    server:tui_execute_command(command)
+    return server:tui_execute_command(command)
   end)
 end
 

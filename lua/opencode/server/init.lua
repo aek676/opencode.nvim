@@ -43,42 +43,24 @@ function Server.new(url)
 
   local Promise = require("opencode.promise")
 
-  return Promise.new(function(resolve, reject)
-    -- Serially check health first to confirm that this is a valid and authenticated `opencode` server.
-    -- Would like to differentiate headless servers, but not possible afaict unfortunately.
-    -- No endpoint exposes such information, and TUI commands sent to a headless server with none attached just no-op, with no tell in the respone.
-    -- So user must manually `opencode attach` in that case.
-    self:get_health(function()
-      resolve(true)
-    end, function(_, _, status) ---@param status number
-      if status == 401 then
-        reject("Unauthorized response from `opencode` at " .. self:display_name())
-      else
-        reject()
-      end
-    end)
-  end)
+  -- Serially check health first to confirm that this is a valid and authenticated `opencode` server.
+  -- Would like to differentiate headless servers, but not possible afaict unfortunately.
+  -- No endpoint exposes such information, and TUI commands sent to a headless server with none attached just no-op, with no tell in the respone.
+  -- So user must manually `opencode attach` in that case.
+  return self
+    :get_health()
     :next(function()
       return Promise.all({
-        Promise.new(function(resolve)
-          self:get_path(function(path)
-            local cwd = path.directory or path.worktree
-            resolve(cwd)
-          end)
+        self:get_path():next(function(path)
+          return path.directory or path.worktree
         end),
-        Promise.new(function(resolve)
-          self:get_sessions(function(session)
-            local title = session[1] and session[1].title or "<No sessions>"
-            resolve(title)
-          end)
+        self:get_sessions():next(function(sessions)
+          return sessions[1] and sessions[1].title or "<No sessions>"
         end),
-        Promise.new(function(resolve)
-          self:get_agents(function(agents)
-            local subagents = vim.tbl_filter(function(agent)
-              return agent.mode == "subagent"
-            end, agents)
-            resolve(subagents)
-          end)
+        self:get_agents():next(function(agents)
+          return vim.tbl_filter(function(agent)
+            return agent.mode == "subagent"
+          end, agents)
         end),
       })
     end)
@@ -100,8 +82,8 @@ end
 ---@param path string
 ---@param method "GET"|"POST"
 ---@param body table?
----@param on_success? fun(response: table)
----@param on_error? fun(code: number, msg: string?, status: number?)
+---@param on_success fun(response: table)
+---@param on_error fun(msg: string?, code: number, status: number?)
 ---@param opts? { persistent?: boolean }
 ---@return number job_id
 function Server:curl(path, method, body, on_success, on_error, opts)
@@ -149,15 +131,6 @@ function Server:curl(path, method, body, on_success, on_error, opts)
 
   table.insert(cmd, url)
 
-  local function on_error_wrapper(code, msg, status)
-    if on_error then
-      on_error(code, msg, status)
-    else
-      -- TODO: Eventually all errors should go through `on_error` for higher-level handling
-      vim.notify(msg, vim.log.levels.ERROR, { title = "opencode" })
-    end
-  end
-
   local response_buffer = {}
   local function process_response_buffer()
     if #response_buffer > 0 then
@@ -176,7 +149,7 @@ function Server:curl(path, method, body, on_success, on_error, opts)
             .. full_event
             .. "\nError: "
             .. result
-          on_error_wrapper(-1, error_message)
+          on_error(error_message, -1)
         end
       end)
     end
@@ -226,33 +199,45 @@ function Server:curl(path, method, body, on_success, on_error, opts)
         end
 
         local error_message = table.concat(detail_lines, "\n")
-        on_error_wrapper(code, error_message, status)
+        on_error(error_message, code, status)
       end
     end,
   })
 end
 
----@param on_success fun(response: opencode.server.PathResponse)
----@param on_error fun(code: number, msg: string?, status: number?)
-function Server:get_health(on_success, on_error)
-  return self:curl("/global/health", "GET", nil, on_success, on_error)
+---@return Promise
+function Server:get_health()
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/global/health", "GET", nil, resolve, function(msg, _, status)
+      if status == 401 then
+        reject("Unauthorized response from `opencode` at " .. self:display_name())
+      else
+        reject(msg)
+      end
+    end)
+  end)
 end
 
 ---@param text string
----@param callback fun(response: table)|nil
-function Server:tui_append_prompt(text, callback)
-  return self:curl("/tui/publish", "POST", { type = "tui.prompt.append", properties = { text = text } }, callback)
+---@return Promise
+function Server:tui_append_prompt(text)
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/tui/publish", "POST", { type = "tui.prompt.append", properties = { text = text } }, resolve, reject)
+  end)
 end
 
 ---@param command opencode.Command|string
----@param callback fun(response: table)|nil
-function Server:tui_execute_command(command, callback)
-  return self:curl(
-    "/tui/publish",
-    "POST",
-    { type = "tui.command.execute", properties = { command = command } },
-    callback
-  )
+---@return Promise
+function Server:tui_execute_command(command)
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl(
+      "/tui/publish",
+      "POST",
+      { type = "tui.command.execute", properties = { command = command } },
+      resolve,
+      reject
+    )
+  end)
 end
 
 ---@alias opencode.server.permission.Reply
@@ -262,9 +247,11 @@ end
 
 ---@param permission number
 ---@param reply opencode.server.permission.Reply
----@param callback? fun(session: table)
-function Server:permit(permission, reply, callback)
-  return self:curl("/permission/" .. permission .. "/reply", "POST", { reply = reply }, callback)
+---@return Promise
+function Server:permit(permission, reply)
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/permission/" .. permission .. "/reply", "POST", { reply = reply }, resolve, reject)
+  end)
 end
 
 ---@class opencode.server.Agent
@@ -272,9 +259,11 @@ end
 ---@field description string
 ---@field mode "primary"|"subagent"
 
----@param callback fun(agents: opencode.server.Agent[])
-function Server:get_agents(callback)
-  return self:curl("/agent", "GET", nil, callback)
+---@return Promise<opencode.server.Agent[]>
+function Server:get_agents()
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/agent", "GET", nil, resolve, reject)
+  end)
 end
 
 ---@class opencode.server.Command
@@ -282,14 +271,6 @@ end
 ---@field description string
 ---@field template string
 ---@field agent string
-
----Get custom commands from `opencode`.
----However, currently it does not seem to support executing these commands.
----
----@param callback fun(commands: opencode.server.Command[])
-function Server:get_commands(callback)
-  return self:curl("/command", "GET", nil, callback)
-end
 
 ---@class opencode.server.SessionTime
 ---@field created integer time in milliseconds
@@ -302,25 +283,32 @@ end
 
 ---Get sessions from `opencode`.
 ---
----@param callback fun(sessions: opencode.server.Session[])
-function Server:get_sessions(callback)
-  return self:curl("/session", "GET", nil, callback)
+---@return Promise<opencode.server.Session[]>
+function Server:get_sessions()
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/session", "GET", nil, resolve, reject)
+  end)
 end
 
 ---Select session in `opencode`.
 ---
 ---@param session_id string
+---@return Promise
 function Server:select_session(session_id)
-  return self:curl("/tui/select-session", "POST", { sessionID = session_id }, nil)
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/tui/select-session", "POST", { sessionID = session_id }, resolve, reject)
+  end)
 end
 
 ---@class opencode.server.PathResponse
 ---@field directory string
 ---@field worktree string
 
----@param on_success fun(response: opencode.server.PathResponse)
-function Server:get_path(on_success, on_error)
-  return self:curl("/path", "GET", nil, on_success, on_error)
+---@return Promise<opencode.server.PathResponse>
+function Server:get_path()
+  return require("opencode.promise").new(function(resolve, reject)
+    self:curl("/path", "GET", nil, resolve, reject)
+  end)
 end
 
 ---@alias opencode.server.event.type
@@ -339,8 +327,8 @@ end
 ---@field type opencode.server.event.type|string
 ---@field properties table
 
----@param on_success fun(response: opencode.server.Event)|nil Invoked with each received event.
----@param on_error fun(code: number, msg: string?)|nil
+---@param on_success fun(response: opencode.server.Event) Invoked with each received event.
+---@param on_error fun(msg: string?, code: number)
 ---@return number job_id
 function Server:sse_subscribe(on_success, on_error)
   return self:curl("/event", "GET", nil, on_success, on_error, { persistent = true })
@@ -394,7 +382,7 @@ function Server:connect()
       end,
       -- Server disappeared ungracefully, e.g. process killed, network error, etc.
       -- Also called on manual disconnects, like our `vim.fn.jobstop`.
-      function(code, msg)
+      function(msg)
         local was_connected = Server.connected == self
         self:disconnect()
         if not was_connected then
