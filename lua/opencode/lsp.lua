@@ -87,9 +87,8 @@ Handlers[vim.lsp.protocol.Methods.workspace_executeCommand] = function(params, c
   if params.command == "opencode.fix" or params.command == "opencode.explain" then
     local diagnostic = params.arguments[1]
     ---@cast diagnostic vim.Diagnostic
-    local filepath = require("opencode.context").format(diagnostic.bufnr)
     local prompt_prefix = params.command == "opencode.fix" and "Fix diagnostic: " or "Explain diagnostic: "
-    local prompt = prompt_prefix .. filepath .. require("opencode.context").format_diagnostic(diagnostic)
+    local prompt = prompt_prefix .. require("opencode.context").format_diagnostic(diagnostic)
 
     require("opencode.server.discovery").get():next(function(server) ---@param server opencode.server.Server
       require("opencode.api.prompt")
