@@ -18,35 +18,41 @@ https://github.com/user-attachments/assets/e85e021c-fa8f-466e-830c-c667b28f611e
 
 ## 📦 Setup
 
-### [lazy.nvim](https://github.com/folke/lazy.nvim)
+[vim.pack](https://neovim.io/doc/user/pack/#vim.pack) (recommended)
+
+```lua
+vim.pack.add({
+  {
+    src = "https://github.com/nickjvandyke/opencode.nvim",
+    version = vim.version.range("*"), -- Latest stable release
+  },
+})
+
+---@type opencode.Opts
+vim.g.opencode_opts = {
+  -- Your configuration, if any; goto definition on the type or field for details
+}
+
+vim.o.autoread = true -- Required for `vim.g.opencode_opts.events.reload`
+
+-- Recommended/example keymaps
+vim.keymap.set({ "n", "x" }, "<leader>oa", function() require("opencode").ask("@this: ") end, { desc = "Ask opencode…" })
+vim.keymap.set({ "n", "x" }, "<leader>os", function() require("opencode").select() end,       { desc = "Select opencode…" })
+
+vim.keymap.set({ "n", "x" }, "go",  function() return require("opencode").operator("@this ") end,        { desc = "Add range to opencode", expr = true })
+vim.keymap.set("n",          "goo", function() return require("opencode").operator("@this ") .. "_" end, { desc = "Add line to opencode", expr = true })
+
+vim.keymap.set("n", "<S-C-u>", function() require("opencode").command("session.half.page.up") end,   { desc = "Scroll opencode up" })
+vim.keymap.set("n", "<S-C-d>", function() require("opencode").command("session.half.page.down") end, { desc = "Scroll opencode down" })
+```
+
+<details>
+<summary><a href="https://github.com/folke/lazy.nvim">lazy.nvim</a></summary>
 
 ```lua
 {
   "nickjvandyke/opencode.nvim",
   version = "*", -- Latest stable release
-  dependencies = {
-    {
-      -- `snacks.nvim` integration is recommended, but optional
-      ---@module "snacks" <- Loads `snacks.nvim` types for configuration intellisense
-      "folke/snacks.nvim",
-      optional = true,
-      opts = {
-        input = {}, -- Enhances `ask()`
-        picker = { -- Enhances `select()`
-          actions = {
-            opencode_send = function(...) return require("opencode").snacks_picker_send(...) end,
-          },
-          win = {
-            input = {
-              keys = {
-                ["<a-a>"] = { "opencode_send", mode = { "n", "i" } },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
   config = function()
     ---@type opencode.Opts
     vim.g.opencode_opts = {
@@ -68,7 +74,10 @@ https://github.com/user-attachments/assets/e85e021c-fa8f-466e-830c-c667b28f611e
 }
 ```
 
-### [nixvim](https://github.com/nix-community/nixvim)
+</details>
+
+<details>
+<summary><a href="https://github.com/nix-community/nixvim">nixvim</a></summary>
 
 ```nix
 programs.nixvim = {
@@ -78,8 +87,56 @@ programs.nixvim = {
 };
 ```
 
+</details>
+
 > [!TIP]
 > Run `:checkhealth opencode` after setup.
+
+### Integrations
+
+<details>
+<summary><a href="https://github.com/folke/snacks.nvim">snacks.nvim</a></summary>
+
+```lua
+require("snacks").setup({
+  input = {
+    enabled = true, -- Enhances `ask()`
+  },
+  picker = {
+    enabled = true, -- Enhances `select()`
+    actions = {
+      opencode_send = function(...) return require("opencode").snacks_picker_send(...) end,
+    },
+    win = {
+      input = {
+        keys = {
+          ["<a-a>"] = { "opencode_send", mode = { "n", "i" } },
+        },
+      },
+    },
+  },
+})
+```
+
+</details>
+
+<details>
+<summary><a href="https://github.com/nvim-lualine/lualine.nvim">lualine.nvim</a></summary>
+
+```lua
+require("lualine").setup({
+  sections = {
+    lualine_z = {
+      {
+        -- Shows the currently connected server and its status
+        require("opencode").statusline,
+      },
+    }
+  }
+})
+```
+
+</details>
 
 ## ⚙️ Configuration
 
@@ -129,7 +186,8 @@ Run local `opencode`s however you like and `opencode.nvim` will find them! Or po
 
 If `opencode.nvim` can't find an existing `opencode`, it starts one for you via `vim.g.opencode_opts.server.start`, defaulting to `term://opencode --port`.
 
-Example using [`snacks.terminal`](https://github.com/folke/snacks.nvim/blob/main/docs/terminal.md):
+<details>
+<summary><a href="https://github.com/folke/snacks.nvim/blob/main/docs/terminal.md">snacks.terminal</a></summary>
 
 ```lua
 local opencode_cmd = 'opencode --port'
@@ -171,6 +229,8 @@ vim.api.nvim_create_autocmd('User', {
   end,
 })
 ```
+
+</details>
 
 ## 🚀 Usage
 
@@ -274,20 +334,6 @@ For edit requests, `opencode.nvim` opens the target file in a new tab and uses N
 | `dp`    | Natively accept _only_ the hunk under the cursor, and reject the edit request |
 | `do`    | Natively reject _only_ the hunk under the cursor, and reject the edit request |
 | `q`     | Close the diff                                                                |
-
-### Statusline
-
-```lua
-require("lualine").setup({
-  sections = {
-    lualine_z = {
-      {
-        require("opencode").statusline,
-      },
-    }
-  }
-})
-```
 
 ## 🙏 Acknowledgments
 
