@@ -16,7 +16,7 @@ local function find()
       if #servers_sharing_cwd == 0 then
         -- We prefer falling back to `opts.server.start` over selecting from servers that don't match the CWD.
         -- Manual selection is still available for that rare need.
-        error("No `opencode` servers found with overlapping CWD", 0)
+        return Promise.reject("No `opencode` servers found with overlapping CWD")
       elseif #servers_sharing_cwd == 1 then
         return servers_sharing_cwd[1]
       else
@@ -25,7 +25,8 @@ local function find()
     end)
 end
 
----Poll for an `opencode` server, rejecting if not found within five seconds.
+---Look for an `opencode` server every second, rejecting if not found after five seconds.
+---
 ---@return Promise<opencode.server.Server>
 local function poll()
   local Promise = require("opencode.promise")
@@ -102,40 +103,43 @@ end
 ---@return Promise<opencode.server.Server[]>
 function M.locally()
   local Promise = require("opencode.promise")
-  return Promise.new(function(resolve, reject)
-    local processes = require("opencode.server.discovery.process").get()
-    if #processes == 0 then
-      reject("No `opencode ... --port` processes found")
-    else
-      resolve(processes)
-    end
-  end):next(function(processes) ---@param processes opencode.server.discovery.process.Process[]
-    return Promise.all_settled(vim.tbl_map(function(process) ---@param process opencode.server.discovery.process.Process
-      return require("opencode.server").new("http://localhost:" .. process.port)
-    end, processes)):next(
-      function(results) ---@param results { status: string, value?: opencode.server.Server, reason?: any }[]
-        local servers = {}
-        for _, result in ipairs(results) do
-          -- We expect non-servers to reject
-          if result.status == "fulfilled" then
-            table.insert(servers, result.value)
-          end
-        end
-
-        if #servers == 0 then
-          -- Prefer to surface a rejection from a valid server (e.g. unauthenticated)
-          for _, result in ipairs(results) do
-            if result.status == "rejected" and result.reason then
-              error(result.reason, 0)
-            end
-          end
-
-          error("No `opencode` servers found", 0)
-        end
-        return servers
+  return require("opencode.server.discovery.process")
+    .get()
+    :next(function(processes)
+      if #processes == 0 then
+        return Promise.reject("No `opencode ... --port` processes found")
       end
-    )
-  end)
+      return processes
+    end)
+    :next(function(processes) ---@param processes opencode.server.discovery.process.Process[]
+      -- `all_settled` because we expect non-servers (falsely discovered processes) to reject
+      return Promise.all_settled(
+        vim.tbl_map(function(process) ---@param process opencode.server.discovery.process.Process
+          return require("opencode.server").new("http://localhost:" .. process.port)
+        end, processes)
+      )
+    end)
+    :next(function(results) ---@param results { status: string, value?: opencode.server.Server, reason?: any }[]
+      local servers = {}
+      for _, result in ipairs(results) do
+        if result.status == "fulfilled" then
+          table.insert(servers, result.value)
+        end
+      end
+
+      if #servers == 0 then
+        for _, result in ipairs(results) do
+          if result.status == "rejected" and result.reason then
+            -- Prefer to surface a specific rejection - it's likely from a valid server (e.g. unauthenticated)
+            return Promise.reject(result.reason)
+          end
+        end
+
+        return Promise.reject("No `opencode` servers found")
+      end
+
+      return servers
+    end)
 end
 
 ---@return Promise<opencode.server.Server>?
@@ -147,7 +151,7 @@ function M.configured()
 
   return type(url) == "string"
       and require("opencode.server").new(url):catch(function()
-        error("Failed to connect to configured `opencode` server URL: " .. url, 0)
+        return require("opencode.promise").reject("Failed to connect to configured `opencode` server URL: " .. url)
       end)
     or type(url) == "function"
       and require("opencode.promise")

@@ -37,8 +37,6 @@ function Server.new(url)
   self.url = url:gsub("/$", "")
   self.heartbeat_timer = vim.uv.new_timer()
 
-  local Promise = require("opencode.promise")
-
   -- Serially check health first to confirm that this is a valid and authenticated `opencode` server.
   -- Would like to differentiate headless servers, but not possible afaict unfortunately.
   -- No endpoint exposes such information, and TUI commands sent to a headless server with none attached just no-op, with no tell in the respone.
@@ -46,7 +44,7 @@ function Server.new(url)
   return self
     :get_health()
     :next(function()
-      return Promise.all({
+      return require("opencode.promise").all({
         self:get_path():next(function(path)
           return path.directory or path.worktree
         end),
