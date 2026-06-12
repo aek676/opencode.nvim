@@ -115,19 +115,19 @@ function M.check()
   local snacks_ok, snacks = pcall(require, "snacks")
   if snacks_ok then
     if snacks.config.get("input", {}).enabled then
-      vim.health.ok("`snacks.input` is enabled: `ask()` will be enhanced.")
+      vim.health.ok("`snacks.input` enabled: `ask()` enhanced.")
       -- TODO: Maybe healthcheck verifying that their completion plugin has the LSP source enabled by default?
       -- Otherwise they need to explicitly enable it for `opencode_ask` filetype.
     else
-      vim.health.warn("`snacks.input` is disabled: `ask()` will not be enhanced.")
+      vim.health.warn("`snacks.input` disabled: `ask()` not enhanced.")
     end
     if snacks.config.get("picker", {}).enabled then
-      vim.health.ok("`snacks.picker` is enabled: `select()` will be enhanced.")
+      vim.health.ok("`snacks.picker` enabled: `select()` enhanced.")
     else
-      vim.health.warn("`snacks.picker` is disabled: `select()` will not be enhanced.")
+      vim.health.warn("`snacks.picker` disabled: `select()` enhanced.")
     end
   else
-    vim.health.warn("`snacks.nvim` is not available: `ask()` and `select()` will not be enhanced.")
+    vim.health.warn("`snacks.nvim` not available: `ask()` and `select()` not enhanced.")
   end
 end
 
