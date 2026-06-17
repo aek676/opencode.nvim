@@ -15,7 +15,7 @@ local M = {}
 ---Whether to show server controls.
 ---@field server? boolean
 
----Select from all `opencode.nvim` functionality.
+---Select from all opencode.nvim functionality.
 ---
 ---@param opts? opencode.select.Opts Override configured options for this call.
 ---@param server opencode.server.Server

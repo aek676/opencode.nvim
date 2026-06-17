@@ -1,9 +1,5 @@
----`opencode.nvim` public API.
+---opencode.nvim public API.
 local M = {}
-
-----------
---- UI ---
-----------
 
 ---Input a prompt for OpenCode.
 ---
@@ -11,7 +7,7 @@ local M = {}
 --- - Press `<Up>` to browse recent asks.
 --- - Highlights and completes contexts and OpenCode subagents.
 ---   - Press `<Tab>` to trigger built-in completion.
----   - Provided by in-process LSP when using `snacks.input`.
+---   - Provided by in-process LSP when using [snacks.input](https://github.com/folke/snacks.nvim/blob/main/docs/input.md).
 ---
 ---@param default? string Text to pre-fill the input with.
 function M.ask(default)
@@ -32,13 +28,13 @@ function M.ask(default)
     end)
 end
 
----Select from all `opencode.nvim` functionality.
+---Select from all opencode.nvim functionality.
 ---
 --- - Prompts
 --- - Commands
 --- - Servers
 ---
---- Highlights and previews items when using `snacks.picker`.
+--- Highlights and previews items when using [snacks.picker](https://github.com/folke/snacks.nvim/blob/main/docs/picker.md).
 ---
 ---@param opts? opencode.select.Opts Override configured options for this call.
 function M.select(opts)
@@ -56,14 +52,10 @@ end
 
 M.statusline = require("opencode.events.status").statusline
 
-------------------------
---- Programmatic API ---
-------------------------
-
 ---Prompt OpenCode.
 ---
 --- - End the prompt with a space to append instead of submit.
---- - OpenCode will interpret references to files or subagents
+--- - OpenCode will interpret references to files or subagents.
 ---
 ---@param prompt string
 function M.prompt(prompt)
@@ -130,10 +122,6 @@ function M.operator(prompt)
 end
 
 M.format = require("opencode.context").format
-
-----------------
---- Server ---
-----------------
 
 ---Start the configured OpenCode server.
 function M.start()

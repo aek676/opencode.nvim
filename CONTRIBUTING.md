@@ -1,4 +1,4 @@
-## Contributing to `opencode.nvim`
+## Contributing to opencode.nvim
 
 Thank you for wanting to contribute!
 

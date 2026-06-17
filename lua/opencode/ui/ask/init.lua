@@ -7,7 +7,7 @@ local M = {}
 ---Text of the prompt.
 ---@field prompt? string
 ---
----Options for [`snacks.input`](https://github.com/folke/snacks.nvim/blob/main/docs/input.md).
+---Options for [snacks.input](https://github.com/folke/snacks.nvim/blob/main/docs/input.md).
 ---@field snacks? snacks.input.Opts
 
 ---Prompt for input with `vim.ui.input`, with context- and server-aware completion.

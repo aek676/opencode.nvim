@@ -14,9 +14,9 @@ function M.check()
   local git_hash =
     vim.trim(vim.fn.system("cd " .. vim.fn.shellescape(plugin_dir) .. " && git rev-parse HEAD")):gsub("\n", "\\n")
   if vim.v.shell_error == 0 then
-    vim.health.info("`opencode.nvim` git commit hash: `" .. git_hash .. "`.")
+    vim.health.info("opencode.nvim git commit hash: `" .. git_hash .. "`.")
   else
-    vim.health.warn("`opencode.nvim` git commit hash: `" .. git_hash .. "`.")
+    vim.health.warn("opencode.nvim git commit hash: `" .. git_hash .. "`.")
   end
 
   vim.health.info("`vim.g.opencode_opts`: " .. vim.inspect(vim.g.opencode_opts))
@@ -115,19 +115,19 @@ function M.check()
   local snacks_ok, snacks = pcall(require, "snacks")
   if snacks_ok then
     if snacks.config.get("input", {}).enabled then
-      vim.health.ok("`snacks.input` enabled: `ask()` enhanced.")
+      vim.health.ok("snacks.input enabled: `ask()` enhanced.")
       -- TODO: Maybe healthcheck verifying that their completion plugin has the LSP source enabled by default?
       -- Otherwise they need to explicitly enable it for `opencode_ask` filetype.
     else
-      vim.health.warn("`snacks.input` disabled: `ask()` not enhanced.")
+      vim.health.warn("snacks.input disabled: `ask()` not enhanced.")
     end
     if snacks.config.get("picker", {}).enabled then
-      vim.health.ok("`snacks.picker` enabled: `select()` enhanced.")
+      vim.health.ok("snacks.picker enabled: `select()` enhanced.")
     else
-      vim.health.warn("`snacks.picker` disabled: `select()` enhanced.")
+      vim.health.warn("snacks.picker disabled: `select()` enhanced.")
     end
   else
-    vim.health.warn("`snacks.nvim` not available: `ask()` and `select()` not enhanced.")
+    vim.health.warn("snacks.nvim not available: `ask()` and `select()` not enhanced.")
   end
 end
 

@@ -151,22 +151,21 @@ require("lualine").setup({
 
 ## ⚙️ Configuration
 
-`opencode.nvim` provides a rich and reliable default experience — see all available options and their defaults [here](./lua/opencode/config.lua).
+opencode.nvim provides a rich and reliable default experience — see all available options and their defaults [here](./lua/opencode/config.lua).
 
 ### Contexts
 
-`opencode.nvim` replaces placeholders in prompts with the corresponding context:
+opencode.nvim replaces placeholders in prompts with the corresponding context:
 
-| Placeholder    | Context                                                                 |
-| -------------- | ----------------------------------------------------------------------- |
-| `@this`        | Range or selection if any, else cursor position                         |
-| `@buffer`      | Current buffer                                                          |
-| `@buffers`     | Open buffers                                                            |
-| `@visible`     | Visible text                                                            |
-| `@diagnostic`  | Diagnostics within the range or selection if any, else under the cursor |
-| `@diagnostics` | Current buffer diagnostics                                              |
-| `@quickfix`    | Quickfix list                                                           |
-| `@marks`       | Global marks                                                            |
+| Placeholder    | Context                                                                      |
+| -------------- | ---------------------------------------------------------------------------- |
+| `@this`        | Range or selection if any, else cursor position                              |
+| `@buffer`      | Current buffer                                                               |
+| `@buffers`     | Open buffers                                                                 |
+| `@diagnostics` | Diagnostics within the range or selection if any, else in the current buffer |
+| `@marks`       | Global marks                                                                 |
+| `@quickfix`    | Quickfix list                                                                |
+| `@visible`     | Visible text                                                                 |
 
 > [!TIP]
 > OpenCode reads referenced files from disk — save your changes!
@@ -175,28 +174,28 @@ require("lualine").setup({
 
 Select prompts to review, explain, and improve your code:
 
-| Name          | Prompt                                                                 |
-| ------------- | ---------------------------------------------------------------------- |
-| `diagnostics` | Explain `@diagnostics`                                                 |
-| `document`    | Add comments documenting `@this`                                       |
-| `explain`     | Explain `@this` and its context                                        |
-| `fix`         | Fix `@diagnostics`                                                     |
-| `implement`   | Implement `@this`                                                      |
-| `optimize`    | Optimize `@this` for performance and readability                       |
-| `review`      | Review `@this` for correctness and readability                         |
-| `test`        | Add tests for `@this`                                                  |
+| Name          | Prompt                                           |
+| ------------- | ------------------------------------------------ |
+| `diagnostics` | Explain `@diagnostics`                           |
+| `document`    | Add comments documenting `@this`                 |
+| `explain`     | Explain `@this` and its context                  |
+| `fix`         | Fix `@diagnostics`                               |
+| `implement`   | Implement `@this`                                |
+| `optimize`    | Optimize `@this` for performance and readability |
+| `review`      | Review `@this` for correctness and readability   |
+| `test`        | Add tests for `@this`                            |
 
 ### Server
 
-Run `opencode` locally however you like and `opencode.nvim` will find them! Or point `vim.g.opencode_opts.server.url` to a specific server, including remotes.
+Run `opencode` locally however you like and opencode.nvim will find them! Or point `vim.g.opencode_opts.server.url` to a specific server, including remotes.
 
 > [!IMPORTANT]
 > You _must_ run `opencode` with the `--port` flag to expose its server.
 
-If `opencode.nvim` can't find a running `opencode`, it starts one via `vim.g.opencode_opts.server.start`, defaulting to `term://opencode --port`.
+If opencode.nvim can't find a running `opencode`, it starts one via `vim.g.opencode_opts.server.start`, defaulting to `term://opencode --port`.
 
 <details>
-<summary><a href="https://github.com/folke/snacks.nvim/blob/main/docs/terminal.md">snacks.terminal</a></summary>
+<summary>Start via <a href="https://github.com/folke/snacks.nvim/blob/main/docs/terminal.md">snacks.terminal</a></summary>
 
 ```lua
 local opencode_cmd = 'opencode --port'
@@ -251,17 +250,17 @@ Input a prompt for OpenCode.
 - Press `<Up>` to browse recent asks.
 - Highlights and completes contexts and OpenCode subagents.
   - Press `<Tab>` to trigger built-in completion.
-  - Provided by in-process LSP when using `snacks.input`.
+  - Provided by in-process LSP when using [snacks.input](https://github.com/folke/snacks.nvim/blob/main/docs/input.md).
 
 ### Select — `require("opencode").select()`
 
-Select from all `opencode.nvim` functionality.
+Select from all opencode.nvim functionality.
 
 - Prompts
 - Commands
 - Servers
 
-Highlights and previews items when using `snacks.picker`.
+Highlights and previews items when using [snacks.picker](https://github.com/folke/snacks.nvim/blob/main/docs/picker.md).
 
 ### Prompt — `require("opencode").prompt()`
 
@@ -281,7 +280,6 @@ Command OpenCode:
 
 | Command                  | Description                                        |
 | ------------------------ | -------------------------------------------------- |
-| `session.list`           | List sessions                                      |
 | `session.new`            | Start a new session                                |
 | `session.select`         | Select a session                                   |
 | `session.share`          | Share the current session                          |
@@ -301,7 +299,7 @@ Command OpenCode:
 
 ## 👀 Events
 
-`opencode.nvim` forwards OpenCode's Server-Sent-Events as an `OpencodeEvent` autocmd:
+opencode.nvim forwards OpenCode's Server-Sent-Events as an `OpencodeEvent` autocmd:
 
 ```lua
 -- Handle OpenCode events
@@ -325,15 +323,15 @@ vim.api.nvim_create_autocmd("User", {
 
 ### Edits
 
-When OpenCode edits a file, `opencode.nvim` automatically reloads the corresponding buffer.
+When OpenCode edits a file, opencode.nvim automatically reloads the corresponding buffer.
 
 ### Permissions
 
-When OpenCode requests a permission, `opencode.nvim` waits for idle to ask you to approve or deny it.
+When OpenCode requests a permission, opencode.nvim asks you to approve or deny it.
 
 #### Edits
 
-For edit requests, `opencode.nvim` opens the target file in a new tab and uses Neovim's `:diffpatch` to display the proposed changes side-by-side. See `:h 'diffopt'` for customization.
+For edit requests, opencode.nvim opens the target file in a new tab and uses Neovim's `:diffpatch` to display the proposed changes side-by-side. See `:h 'diffopt'` for customization.
 
 | Keymap  | Function                                                                      |
 | ------- | ----------------------------------------------------------------------------- |
