@@ -10,23 +10,28 @@ function M.this(context)
       from[2] = context.range.from[2] + 1
       to[2] = context.range.to[2] + 1
     end
-    return require("opencode.context").format({ buf = context.buf, from = from, to = to })
+    return context.format({ buf = context.buf, from = from, to = to, rel = context.server.cwd })
   else
-    return require("opencode.context").format({ buf = context.buf, from = { context.cursor[1], context.cursor[2] + 1 } })
+    return context.format({
+      buf = context.buf,
+      from = { context.cursor[1], context.cursor[2] + 1 },
+      rel = context.server.cwd,
+    })
   end
 end
 
 ---The buffer.
 ---@param context opencode.context.Context
 function M.buffer(context)
-  return require("opencode.context").format({ buf = context.buf })
+  return context.format({ buf = context.buf, rel = context.server.cwd })
 end
 
 ---All open buffers.
-function M.buffers()
+---@param context opencode.context.Context
+function M.buffers(context)
   local file_list = {}
   for _, buf in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
-    local path = require("opencode.context").format({ buf = buf.bufnr })
+    local path = context.format({ buf = buf.bufnr, rel = context.server.cwd })
     if path then
       table.insert(file_list, path)
     end
@@ -38,14 +43,16 @@ function M.buffers()
 end
 
 ---The visible lines in all open windows.
-function M.visible_text()
+---@param context opencode.context.Context
+function M.visible_text(context)
   local visible = {}
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     local buf = vim.api.nvim_win_get_buf(win)
-    local location = require("opencode.context").format({
+    local location = context.format({
       buf = buf,
       from = { vim.fn.line("w0", win) },
       to = { vim.fn.line("w$", win) },
+      rel = context.server.cwd,
     })
     if location then
       table.insert(visible, location)
@@ -55,23 +62,6 @@ function M.visible_text()
     return nil
   end
   return table.concat(visible, ", ")
-end
-
----@param diagnostic vim.Diagnostic
----@return string
-function M.format_diagnostic(diagnostic)
-  local location = require("opencode.context").format({
-    buf = diagnostic.bufnr,
-    from = { diagnostic.lnum + 1, diagnostic.col + 1 },
-    to = { diagnostic.end_lnum + 1, diagnostic.end_col + 1 },
-  })
-
-  return string.format(
-    "%s (%s): %s",
-    location,
-    diagnostic.source or "unknown",
-    vim.trim(diagnostic.message:gsub("%s+", " "))
-  )
 end
 
 ---Diagnostics for the buffer, or overlapping the range if present.
@@ -108,15 +98,34 @@ function M.diagnostics(context)
     return nil
   end
 
+  ---@param diagnostic vim.Diagnostic
+  ---@return string
+  local function format_diagnostic(diagnostic)
+    local location = context.format({
+      buf = diagnostic.bufnr,
+      from = { diagnostic.lnum + 1, diagnostic.col + 1 },
+      to = { diagnostic.end_lnum + 1, diagnostic.end_col + 1 },
+      rel = context and context.server.cwd,
+    })
+
+    return string.format(
+      "%s (%s): %s",
+      location,
+      diagnostic.source or "unknown",
+      vim.trim(diagnostic.message:gsub("%s+", " "))
+    )
+  end
+
   local diagnostic_strings = vim.tbl_map(function(diagnostic)
-    return "- " .. M.format_diagnostic(diagnostic)
+    return "- " .. format_diagnostic(diagnostic)
   end, diagnostics)
 
   return #diagnostics .. " diagnostic(s):" .. "\n" .. table.concat(diagnostic_strings, "\n")
 end
 
 ---Formatted quickfix list entries.
-function M.quickfix()
+---@param context opencode.context.Context
+function M.quickfix(context)
   local qflist = vim.fn.getqflist()
   if #qflist == 0 then
     return nil
@@ -125,20 +134,24 @@ function M.quickfix()
   for _, entry in ipairs(qflist) do
     local has_buf = entry.bufnr ~= 0 and vim.api.nvim_buf_get_name(entry.bufnr) ~= ""
     if has_buf then
-      table.insert(lines, require("opencode.context").format({ buf = entry.bufnr, from = { entry.lnum, entry.col } }))
+      table.insert(
+        lines,
+        context.format({ buf = entry.bufnr, from = { entry.lnum, entry.col }, rel = context.server.cwd })
+      )
     end
   end
   return table.concat(lines, ", ")
 end
 
 ---Global marks.
-function M.marks()
+---@param context opencode.context.Context
+function M.marks(context)
   local marks = {}
   for _, mark in ipairs(vim.fn.getmarklist()) do
     if mark.mark:match("^'[A-Z]$") then
       table.insert(
         marks,
-        require("opencode.context").format({ buf = mark.pos[1], from = { mark.pos[2], mark.pos[3] } })
+        context.format({ buf = mark.pos[1], from = { mark.pos[2], mark.pos[3] }, rel = context.server.cwd })
       )
     end
   end

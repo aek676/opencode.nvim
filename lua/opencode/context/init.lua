@@ -227,7 +227,7 @@ end
 
 ---Format a location for OpenCode.
 ---
----@param opts { path?: string, buf?: integer, from?: integer[], to?: integer[] } One of `path` or `buf` is required. `from` and `to` are 1-based `{ line, col? }` tuples.
+---@param opts { path?: string, buf?: integer, from?: integer[], to?: integer[], rel?: string } One of `path` or `buf` is required. `from` and `to` are 1-based `{ line, col? }` tuples. `rel` is an optional path to format relative to, otherwise absolute.
 ---@return string? formatted Location if backed by a file (e.g. `opencode.lua:L21:C10-L65:C11`) so OpenCode can gather context, else literal text of the range or buffer. `nil` if invalid file or buffer.
 function Context.format(opts)
   assert(opts.path or opts.buf, "One of `opts.path` or `opts.buf` is required.")
@@ -266,6 +266,12 @@ function Context.format(opts)
   end
 
   local result = vim.fn.fnamemodify(filepath, ":p")
+  if opts.rel then
+    local prefix = opts.rel:match("/$") and opts.rel or opts.rel .. "/"
+    if result:find(prefix, 1, true) == 1 then
+      result = result:sub(#prefix + 1)
+    end
+  end
   if start_line then
     result = result .. ":" .. string.format("L%d", start_line)
     if start_col then
