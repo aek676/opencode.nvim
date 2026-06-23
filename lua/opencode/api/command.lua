@@ -2,7 +2,7 @@ local M = {}
 
 ---@param command opencode.server.Command | string
 ---@param server opencode.server.Server
----@return Promise
+---@return Promise<any>
 function M.command(command, server)
   return server:tui_execute_command(command):next(function()
     if command == "session.interrupt" then

@@ -13,7 +13,7 @@ local M = {}
 
 ---@param context opencode.context.Context
 ---@param opts? opencode.select.Opts Override configured options for this call.
----@return Promise
+---@return Promise<any>
 function M.select(context, opts)
   opts = vim.tbl_deep_extend("force", require("opencode.config").opts.select or {}, opts or {})
   local config = require("opencode.config")
@@ -132,7 +132,7 @@ function M.select(context, opts)
 
   return require("opencode.promise.ui")
     .select(items, select_opts)
-    :next(function(choice) ---@param choice opencode.select.Item
+    :next(function(choice)
       if choice.__type == "prompt" then
         return require("opencode.api.prompt").prompt(choice.text, context)
       elseif choice.__type == "command" then
@@ -147,10 +147,10 @@ function M.select(context, opts)
         if choice.name == "server.select" then
           return require("opencode.server.discovery")
             .locally()
-            :next(function(servers) ---@param servers opencode.server.Server[]
+            :next(function(servers)
               local configured = require("opencode.server.discovery").configured()
               if configured then
-                return configured:next(function(configured_server) ---@param configured_server opencode.server.Server
+                return configured:next(function(configured_server)
                   if
                     not vim.tbl_contains(servers, function(local_server)
                       return local_server.url == configured_server.url
@@ -158,16 +158,16 @@ function M.select(context, opts)
                   then
                     table.insert(servers, 1, configured_server)
                   end
-                  return servers
+                  return Promise.resolve(servers)
                 end)
               else
-                return servers
+                return Promise.resolve(servers)
               end
             end)
-            :next(function(servers) ---@param servers opencode.server.Server[]
+            :next(function(servers)
               return require("opencode.ui.select_server").select_server(servers)
             end)
-            :next(function(new_server) ---@param new_server opencode.server.Server
+            :next(function(new_server)
               return new_server:connect()
             end)
         elseif choice.name == "server.start" then

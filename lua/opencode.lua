@@ -13,9 +13,9 @@ local M = {}
 function M.ask(default)
   require("opencode.server.discovery")
     .get()
-    :next(function(server) ---@param server opencode.server.Server
+    :next(function(server)
       local context = require("opencode.context").new(server)
-      return require("opencode.ui.ask").ask(default, context):next(function(input) ---@param input string
+      return require("opencode.ui.ask").ask(default, context):next(function(input)
         return require("opencode.api.prompt").prompt(input, context)
       end)
     end)
@@ -38,7 +38,7 @@ end
 function M.select(opts)
   require("opencode.server.discovery")
     .get()
-    :next(function(server) ---@param server opencode.server.Server
+    :next(function(server)
       local context = require("opencode.context").new(server)
       return require("opencode.ui.select").select(context, opts)
     end)
@@ -61,7 +61,7 @@ M.statusline = require("opencode.events.status").statusline
 function M.prompt(prompt)
   require("opencode.server.discovery")
     .get()
-    :next(function(server) ---@param server opencode.server.Server
+    :next(function(server)
       local context = require("opencode.context").new(server)
       return require("opencode.api.prompt").prompt(prompt, context)
     end)
@@ -78,7 +78,7 @@ end
 function M.command(command)
   require("opencode.server.discovery")
     .get()
-    :next(function(server) ---@param server opencode.server.Server
+    :next(function(server)
       return require("opencode.api.command").command(command, server)
     end)
     :catch(function(err)
@@ -101,7 +101,7 @@ function M.operator(prompt)
 
     require("opencode.server.discovery")
       .get()
-      :next(function(server) ---@param server opencode.server.Server
+      :next(function(server)
         local context = require("opencode.context").new(server, {
           from = { start_pos[1], start_pos[2] },
           to = { end_pos[1], end_pos[2] },

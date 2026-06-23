@@ -2,11 +2,11 @@ local M = {}
 
 ---@return Promise<number[]>
 local function find_pids()
-  return require("opencode.promise.system")
-    .system({ "pgrep", "-f", "opencode.*--port" })
-    :next(function(pgrep_stdout) ---@param pgrep_stdout string
-      return vim.tbl_map(tonumber, vim.split(pgrep_stdout, "\n", { trimempty = true }))
-    end)
+  return require("opencode.promise.system").system({ "pgrep", "-f", "opencode.*--port" }):next(function(pgrep_stdout)
+    return require("opencode.promise").resolve(
+      vim.tbl_map(tonumber, vim.split(pgrep_stdout, "\n", { trimempty = true }))
+    )
+  end)
 end
 
 ---@param pids number[]
@@ -27,7 +27,7 @@ local function find_ports(pids)
       "-P", -- Don't resolve port numbers to port names - we can't use the latter to send requests, and it's slower anyway
       "-n", -- Don't resolve port numbers to hostnames - same as above
     })
-    :next(function(lsof_stdout) ---@param lsof_stdout string
+    :next(function(lsof_stdout)
       ---@type opencode.server.discovery.process.Process[]
       local processes = {}
       local pid
@@ -36,11 +36,8 @@ local function find_ports(pids)
         local value = line:sub(2)
 
         if prefix == "p" then
-          -- PID line
           pid = tonumber(value)
         elseif prefix == "n" then
-          -- Network interface line - look for ":PORT" at the end of the string.
-          -- Emit one process entry per (PID, port) since a single PID may listen on multiple ports.
           local port = tonumber(value:match(":(%d+)$"))
           if port then
             table.insert(
@@ -52,7 +49,7 @@ local function find_ports(pids)
         end
       end
 
-      return processes
+      return require("opencode.promise").resolve(processes)
     end)
 end
 
@@ -60,7 +57,7 @@ end
 function M.get()
   return find_pids():next(function(pids)
     if #pids == 0 then
-      return {}
+      return require("opencode.promise").resolve({})
     end
     return find_ports(pids)
   end)

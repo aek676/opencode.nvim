@@ -2,12 +2,12 @@ local M = {}
 
 ---@param prompt string
 ---@param context opencode.context.Context
----@return Promise
+---@return Promise<any>
 function M.prompt(prompt, context)
   return (prompt:match("%.%.%.$") and require("opencode.ui.ask").ask(prompt:gsub("%.%.%.$", ""), context) or require(
     "opencode.promise"
   ).resolve(prompt))
-    :next(function(_prompt) ---@param _prompt string
+    :next(function(_prompt)
       local plaintext = context:render(_prompt).output:plaintext()
 
       return context.server:tui_append_prompt(plaintext):next(function()

@@ -13,7 +13,7 @@ end
 ---@param server opencode.server.Server
 ---@return Promise<opencode.server.Session>
 function M.select_session(server)
-  return server:get_sessions():next(function(sessions) ---@param sessions opencode.server.Session[]
+  return server:get_sessions():next(function(sessions)
     table.sort(sessions, function(a, b)
       return a.time.updated > b.time.updated
     end)

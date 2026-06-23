@@ -14,16 +14,18 @@ ForEach-Object {
 
 ---@return Promise<opencode.server.discovery.process.Process[]>
 function M.get()
+  local Promise = require("opencode.promise")
+
   return require("opencode.promise.system")
     .system({ "powershell", "-NoProfile", "-Command", ps_script })
-    :next(function(ps_stdout) ---@param ps_stdout string
+    :next(function(ps_stdout)
       if ps_stdout == "" then
-        return {}
+        return Promise.resolve({})
       end
 
       local ok, processes = pcall(vim.fn.json_decode, ps_stdout)
       if not ok then
-        return require("opencode.promise").reject("Failed to parse `powershell` output: " .. tostring(processes))
+        return Promise.reject("Failed to parse `powershell` output: " .. tostring(processes))
       end
 
       -- A single process was found
@@ -31,7 +33,7 @@ function M.get()
         processes = { processes }
       end
 
-      return processes
+      return Promise.resolve(processes)
     end)
 end
 

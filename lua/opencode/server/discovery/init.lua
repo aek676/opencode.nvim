@@ -6,9 +6,9 @@ local function find()
 
   return connected_server and Promise.resolve(connected_server)
     or M.configured()
-    or M.locally():next(function(servers) ---@param servers opencode.server.Server[]
+    or M.locally():next(function(servers)
       local nvim_cwd = vim.fn.getcwd()
-      local servers_sharing_cwd = vim.tbl_filter(function(server)
+      local servers_sharing_cwd = vim.tbl_filter(function(server) ---@param server opencode.server.Server
         -- Overlaps in either direction, with no non-empty mismatch
         return server.cwd:find(nvim_cwd, 0, true) == 1 or nvim_cwd:find(server.cwd, 0, true) == 1
       end, servers)
@@ -18,7 +18,7 @@ local function find()
         -- Manual selection is still available for that rare need.
         return Promise.reject("No OpenCode servers found with overlapping CWD")
       elseif #servers_sharing_cwd == 1 then
-        return servers_sharing_cwd[1]
+        return Promise.resolve(servers_sharing_cwd[1])
       else
         return require("opencode.ui.select_server").select_server(servers_sharing_cwd)
       end
@@ -93,7 +93,7 @@ function M.get()
 
       return poll()
     end)
-    :next(function(server) ---@param server opencode.server.Server
+    :next(function(server)
       return server:connect()
     end)
 end
@@ -108,10 +108,11 @@ function M.locally()
     :next(function(processes)
       if #processes == 0 then
         return Promise.reject("No `opencode ... --port` processes found")
+      else
+        return Promise.resolve(processes)
       end
-      return processes
     end)
-    :next(function(processes) ---@param processes opencode.server.discovery.process.Process[]
+    :next(function(processes)
       -- `all_settled` because we expect non-servers (falsely discovered processes) to reject
       return Promise.all_settled(
         vim.tbl_map(function(process) ---@param process opencode.server.discovery.process.Process
@@ -119,7 +120,7 @@ function M.locally()
         end, processes)
       )
     end)
-    :next(function(results) ---@param results { status: string, value?: opencode.server.Server, reason?: any }[]
+    :next(function(results)
       local servers = {}
       for _, result in ipairs(results) do
         if result.status == "fulfilled" then
@@ -138,7 +139,7 @@ function M.locally()
         return Promise.reject("No OpenCode servers found")
       end
 
-      return servers
+      return Promise.resolve(servers)
     end)
 end
 

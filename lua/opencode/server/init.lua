@@ -73,6 +73,7 @@ function Server.new(url)
   self.url = url:gsub("/$", "")
   self.heartbeat_timer = vim.uv.new_timer()
 
+  local Promise = require("opencode.promise")
   -- Serially check health first to confirm that this is a valid and authenticated OpenCode server.
   -- Would like to differentiate headless servers, but not possible afaict unfortunately.
   -- No endpoint exposes such information, and TUI commands sent to a headless server with none attached just no-op, with no tell in the respone.
@@ -81,25 +82,22 @@ function Server.new(url)
     :get_health()
     :next(function()
       return require("opencode.promise").all({
-        self:get_path():next(function(path)
-          return path.directory or path.worktree
-        end),
-        self:get_sessions():next(function(sessions)
-          return sessions[1] and sessions[1].title or "<No sessions>"
-        end),
-        self:get_agents():next(function(agents)
-          return vim.tbl_filter(function(agent)
-            return agent.mode == "subagent"
-          end, agents)
-        end),
+        self:get_path(),
+        self:get_sessions(),
+        self:get_agents(),
       })
     end)
-    :next(function(results) ---@param results { [1]: string, [2]: string, [3]: opencode.server.Agent[] }
-      self.cwd = results[1]
-      self.title = results[2]
-      self.subagents = results[3]
-      return self
-    end)
+    :next(
+      function(results) ---@param results { [1]: { directory: string, worktree: string }, [2]: opencode.server.Session[], [3]: opencode.server.Agent }
+        self.cwd = results[1].directory or results[1].worktree
+        self.title = results[2][1] and results[2][1].title or "<No sessions>"
+        self.subagents = vim.tbl_filter(function(agent) ---@param agent opencode.server.Agent
+          return agent.mode == "subagent"
+        end, results[3])
+
+        return Promise.resolve(self)
+      end
+    )
 end
 
 ---Human-readable name, stripping the protocol prefix.
@@ -233,7 +231,7 @@ function Server:curl(path, method, body, on_success, on_error, opts)
   })
 end
 
----@return Promise
+---@return Promise<any>
 function Server:get_health()
   return require("opencode.promise").new(function(resolve, reject)
     self:curl("/global/health", "GET", nil, resolve, function(msg, _, status)
@@ -247,7 +245,7 @@ function Server:get_health()
 end
 
 ---@param text string
----@return Promise
+---@return Promise<any>
 function Server:tui_append_prompt(text)
   return require("opencode.promise").new(function(resolve, reject)
     self:curl("/tui/publish", "POST", { type = "tui.prompt.append", properties = { text = text } }, resolve, reject)
@@ -255,7 +253,7 @@ function Server:tui_append_prompt(text)
 end
 
 ---@param command opencode.server.Command | string
----@return Promise
+---@return Promise<any>
 function Server:tui_execute_command(command)
   return require("opencode.promise").new(function(resolve, reject)
     self:curl(
@@ -270,7 +268,7 @@ end
 
 ---@param permission number
 ---@param reply opencode.server.PermissionReply
----@return Promise
+---@return Promise<any>
 function Server:permit(permission, reply)
   return require("opencode.promise").new(function(resolve, reject)
     self:curl("/permission/" .. permission .. "/reply", "POST", { reply = reply }, resolve, reject)
@@ -292,7 +290,7 @@ function Server:get_sessions()
 end
 
 ---@param session_id string
----@return Promise
+---@return Promise<any>
 function Server:select_session(session_id)
   return require("opencode.promise").new(function(resolve, reject)
     self:curl("/tui/select-session", "POST", { sessionID = session_id }, resolve, reject)

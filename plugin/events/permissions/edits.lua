@@ -14,7 +14,7 @@ vim.api.nvim_create_autocmd("User", {
 
     require("opencode.server")
       .new(url)
-      :next(function(server) ---@param server opencode.server.Server
+      :next(function(server)
         require("opencode.events.permissions.edits").diff(event, server)
       end)
       :catch(function(err)
